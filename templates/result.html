@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Deteksi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: #f9f9f9;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            text-decoration: none;
+            color: #007bff;
+            border: 1px solid #007bff;
+            border-radius: 4px;
+            background: #fff;
+        }
+        a:hover {
+            background: #007bff;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hasil Deteksi</h1>
+        <img src="{{ url_for('static', filename='uploads/' ~ image_path) }}" alt="Uploaded Image">
+        <ul>
+            {% for detection in detections %}
+                <li>
+                    <strong>Label:</strong> {{ detection.label }}<br>
+                    <strong>Confidence:</strong> {{ detection.confidence }}<br>
+                    <strong>Bounding Box:</strong> {{ detection.bbox }}
+                </li>
+            {% endfor %}
+        </ul>
+        <a href="{{ url_for('index') }}">Upload Gambar Lain</a>
+    </div>
+</body>
+</html>

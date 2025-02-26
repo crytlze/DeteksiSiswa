@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deteksi Kegiatan Siswa</title>
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .upload-section {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        .btn-upload {
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .image-section {
+            margin-top: 30px;
+        }
+        .image-section img {
+            max-width: 100%;
+            border-radius: 10px;
+        }
+        .detections, .label-counts, .activities, .stats-table {
+            margin-top: 30px;
+        }
+        .detection-detail img {
+            max-width: 100%;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-md-12 col-sm-12">
+            <h1>Deteksi Kegiatan Siswa</h1>
+            <div class="upload-section">
+                <form action="/upload" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="imageInput" class="form-label">Pilih gambar untuk diunggah:</label>
+                        <input class="form-control" type="file" name="images" id="imageInput" accept="image/*" multiple required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-upload">Unggah dan Deteksi</button>
+                </form>
+            </div>
+            
+            <!-- Tampilkan tabel dengan hasil deteksi -->
+            {% if results %}
+            <div class="stats-table">
+                <h2 class="mt-4">Hasil Deteksi dari Semua Gambar</h2>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nama File</th>
+                            <th>Gambar Terdeteksi</th>
+                            <th>Total Deteksi</th>
+                            <th>Objek Unik</th>
+                            <th>Kegiatan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                            <tr id="row-{{ loop.index0 }}" class="detection-row" data-bs-toggle="modal" data-bs-target="#modal-{{ loop.index0 }}">
+                                <td><a href="#" data-bs-toggle="modal" data-bs-target="#modal-{{ loop.index0 }}">{{ result.filename }}</a></td>
+                                <td>
+                                    <img src="{{ url_for('static', filename='uploads/' + result.detected_image_path) }}" alt="Gambar Terdeteksi" class="img-fluid" style="max-width: 150px;">
+                                </td>
+                                <td>{{ result.total_detections }}</td>
+                                <td>{{ result.unique_objects }}</td>
+                                <td>{{ result.activity }}</td>
+                            </tr>
+
+                            <!-- Modal untuk detail deteksi -->
+                            <div class="modal fade" id="modal-{{ loop.index0 }}" tabindex="-1" aria-labelledby="modalLabel-{{ loop.index0 }}" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="modalLabel-{{ loop.index0 }}">{{ result.filename }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <img src="{{ url_for('static', filename='uploads/' + result.detected_image_path) }}" alt="Gambar Terdeteksi" class="img-fluid">
+                                            <div class="detections mt-3">
+                                                <h4>Hasil Deteksi:</h4>
+                                                <ul class="list-group">
+                                                    {% for detection in result.detections %}
+                                                        <li class="list-group-item">
+                                                            <strong>Label:</strong> {{ detection.label }} <br>
+                                                            <strong>Confidence:</strong> {{ detection.confidence }} <br>
+                                                            <strong>Bounding Box:</strong> {{ detection.bbox }}
+                                                        </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tampilkan jumlah label dalam tabel -->
+            <div class="label-counts">
+                <h2>Jumlah Label:</h2>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Label</th>
+                            <th>Jumlah</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set total_count = 0 %}
+                        {% set student_label_count = 0 %}
+                        {% for label, count in label_counts.items() %}
+                            <tr>
+                                <td>{{ label }}</td>
+                                <td>{{ count }}</td>
+                            </tr>
+                            {% set total_count = total_count + count %}
+                            {% if label == 'Siswa' %}
+                                {% set student_label_count = student_label_count + count %}
+                            {% endif %}
+                        {% endfor %}
+                        <tr>
+                            <td><strong>Total</strong></td>
+                            <td><strong>{{ total_count }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Label Siswa</strong></td>
+                            <td><strong>{{ student_label_count }}</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tampilkan statistik jumlah berdasarkan kategori -->
+            <div class="activities mt-4">
+                <h2>Statistik Deteksi Objek Berdasarkan Kategori</h2>
+                <div class="row">
+                    <div class="col-md-4">
+                        <h3>Jenis Kelamin:</h3>
+                        <ul>
+                            <li>Laki-laki: {{ count_gender['Laki-laki'] }}</li>
+                            <li>Perempuan: {{ count_gender['Perempuan'] }}</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h3>Peran:</h3>
+                        <ul>
+                            <li>Siswa: {{ count_role['Siswa'] }}</li>
+                            <li>Guru: {{ count_role['Guru'] }}</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h3>Benda Siswa:</h3>
+                        <ul>
+                            <li>Buku: {{ count_tools['Buku'] }}</li>
+                            <li>Tas: {{ count_tools['Tas'] }}</li>
+                            <li>Alat Tulis: {{ count_tools['Alat Tulis'] }}</li>
+                        </ul>
+                    </div>
+
+                    <div class="col-md-4">
+                        <h3>Posisi:</h3>
+                        <ul>
+                            <li>Duduk: {{ count_posisi['Duduk'] }}</li>
+                            <li>Berdiri: {{ count_posisi['Berdiri'] }}</li>
+                        </ul>
+                    </div>
+
+                    
+
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS dan dependensi -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
